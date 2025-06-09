@@ -1,14 +1,43 @@
-import APITests.UserSteps;
+package api.tests;
+
 import com.github.javafaker.Faker;
 import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.RestAssured;
 import io.restassured.config.LogConfig;
 import org.apache.http.HttpStatus;
+import org.hamcrest.core.Is;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import static org.hamcrest.Matchers.is;
 
 public class ChangingUserDataTests {
+
+    private final UserSteps userSteps = new UserSteps();
+    private final Faker faker = new Faker();
+
+    // Поля для хранения данных пользователя
+    private String email;
+    private String password;
+    private String name;
+    private Integer userId;
+
+    @Before
+    public void setUp() {
+
+        RestAssured.config = RestAssured.config()
+                .logConfig(LogConfig.logConfig().enableLoggingOfRequestAndResponseIfValidationFails());
+
+        email = faker.internet().emailAddress();
+        password = faker.internet().password();
+        name = faker.name().fullName();
+
+        // Создание пользователя
+        userSteps.createUser(email, password, name)
+                .statusCode(HttpStatus.SC_OK)
+                .body("success", Is.is(true));
+    }
 
     @Test
     @DisplayName("Test possibly update email user with login")
@@ -21,37 +50,21 @@ public class ChangingUserDataTests {
         RestAssured.config = RestAssured.config()
                 .logConfig(LogConfig.logConfig().enableLoggingOfRequestAndResponseIfValidationFails());
 
-        String email = faker.internet().emailAddress();
-        String password = faker.internet().password();
-        String name = faker.name().fullName();
-
-        userSteps
-                .createUser(email, password, name)
-                .statusCode(HttpStatus.SC_OK)
-                .body("success", is(true));
-
         // Логинимся и получаем токен
         String accessToken = userSteps
                 .loginUser(email, password, name)
                 .statusCode(HttpStatus.SC_OK)
                 .extract().path("accessToken");
 
-        // Получение информации о пользователе
-        userSteps.getUserInfo(accessToken)
-                .statusCode(HttpStatus.SC_OK)
-                .body("success", is(true))
-                .body("user.email", is(email))
-                .body("user.name", is(name));
-
         // Обновление информации о пользователе
         String updatedEmail = faker.internet().emailAddress();
-        userSteps.updateUserInfoEmail(accessToken, updatedEmail)
+        userSteps.updateUserInfoEmail(accessToken, updatedEmail, password, name)
                 .statusCode(HttpStatus.SC_OK)
                 .body("success", is(true))
                 .body("user.email", is(updatedEmail))
                 .body("user.name", is(name));
 
-        // Проверка (дублирование) получения информации о пользователе
+        // Получение информации о пользователе
         userSteps.getUserInfo(accessToken)
                 .statusCode(HttpStatus.SC_OK)
                 .body("success", is(true))
@@ -65,45 +78,22 @@ public class ChangingUserDataTests {
     public void testPossiblyUpdatePasswordUserWithLogin() {
 
         final UserSteps userSteps = new UserSteps();
-        final Faker faker = new Faker();
 
         RestAssured.config = RestAssured.config()
                 .logConfig(LogConfig.logConfig().enableLoggingOfRequestAndResponseIfValidationFails());
-
-        String email = faker.internet().emailAddress();
-        String password = faker.internet().password();
-        String name = faker.name().fullName();
-
-        userSteps.createUser(email, password, name)
-                .statusCode(HttpStatus.SC_OK)
-                .body("success", is(true));
 
         // Логинимся и получаем токен
         String accessToken = userSteps.loginUser(email, password, name)
                 .statusCode(HttpStatus.SC_OK)
                 .extract().path("accessToken");
 
-        // Получение информации о пользователе
-        userSteps.getUserInfo(accessToken)
-                .statusCode(HttpStatus.SC_OK)
-                .body("success", is(true))
-                .body("user.email", is(email))
-                .body("user.name", is(name));
-
         // Обновление информации о пользователе
         String updatedPassword = faker.internet().password();
-        userSteps.updateUserInfoPassword(accessToken, updatedPassword)
+        userSteps.updateUserInfoPassword(accessToken, email, updatedPassword, name)
                 .statusCode(HttpStatus.SC_OK)
                 .body("success", is(true));
 
-        // Проверка (дублирование) получения информации о пользователе
-        userSteps.getUserInfo(accessToken)
-                .statusCode(HttpStatus.SC_OK)
-                .body("success", is(true))
-                .body("user.email", is(email))
-                .body("user.name", is(name));
-
-        // Заново входим с новым паролем, чтобы проверить, что обновление прошло успешно
+        // Проверка входа с новым паролем
         userSteps.loginUser(email, updatedPassword, name)
                 .statusCode(HttpStatus.SC_OK)
                 .extract().path("accessToken");
@@ -115,19 +105,9 @@ public class ChangingUserDataTests {
     public void testPossiblyUserUpdateNameWithLogin() {
 
         final UserSteps userSteps = new UserSteps();
-        final Faker faker = new Faker();
 
         RestAssured.config = RestAssured.config()
                 .logConfig(LogConfig.logConfig().enableLoggingOfRequestAndResponseIfValidationFails());
-
-        String email = faker.internet().emailAddress();
-        String password = faker.internet().password();
-        String name = faker.name().fullName();
-
-        userSteps
-                .createUser(email, password, name)
-                .statusCode(HttpStatus.SC_OK)
-                .body("success", is(true));
 
         // Логинимся и получаем токен
         String accessToken = userSteps
@@ -135,22 +115,15 @@ public class ChangingUserDataTests {
                 .statusCode(HttpStatus.SC_OK)
                 .extract().path("accessToken");
 
-        // Получение информации о пользователе
-        userSteps.getUserInfo(accessToken)
-                .statusCode(HttpStatus.SC_OK)
-                .body("success", is(true))
-                .body("user.email", is(email))
-                .body("user.name", is(name));
-
         // Обновление информации о пользователе
         String updatedName = faker.name().fullName();
-        userSteps.updateUserInfoName(accessToken, updatedName)
+        userSteps.updateUserInfoName(accessToken, email, password, updatedName)
                 .statusCode(HttpStatus.SC_OK)
                 .body("success", is(true))
                 .body("user.email", is(email))
                 .body("user.name", is(updatedName));
 
-        // Проверка (дублирование) получения информации о пользователе
+        // Получение информации о пользователе
         userSteps.getUserInfo(accessToken)
                 .statusCode(HttpStatus.SC_OK)
                 .body("success", is(true))
@@ -162,32 +135,11 @@ public class ChangingUserDataTests {
     @DisplayName("Test not possibly update email user without login")
     @Description("Этот тест проверяет, что обновление email пользователя невозможно без авторизации")
     public void testNotPossiblyUpdateEmailUserWithoutLogin() {
-
         final UserSteps userSteps = new UserSteps();
-        final Faker faker = new Faker();
-
-        RestAssured.config = RestAssured.config()
-                .logConfig(LogConfig.logConfig().enableLoggingOfRequestAndResponseIfValidationFails());
-
-        String email = faker.internet().emailAddress();
-        String password = faker.internet().password();
-        String name = faker.name().fullName();
-
-        // Создание пользователя
-        userSteps
-                .createUser(email, password, name)
-                .statusCode(HttpStatus.SC_OK)
-                .body("success", is(true));
-
-        // Получение информации о пользователе без токена
-        userSteps.getUserInfo("")
-                .statusCode(HttpStatus.SC_UNAUTHORIZED)
-                .body("success", is(false))
-                .body("message", is("You should be authorised"));
 
         // Обновление информации о пользователе без токена
         String updatedEmail = faker.internet().emailAddress();
-        userSteps.updateUserInfoEmail("", updatedEmail)
+        userSteps.updateUserInfoEmail("", updatedEmail, null, null)
                 .statusCode(HttpStatus.SC_UNAUTHORIZED)
                 .body("success", is(false))
                 .body("message", is("You should be authorised"));
@@ -197,32 +149,11 @@ public class ChangingUserDataTests {
     @DisplayName("Test not possibly update password user without login")
     @Description("Этот тест проверяет, что обновление password пользователя невозможно без авторизации")
     public void testNotPossiblyUpdatePasswordUserWithoutLogin() {
-
         final UserSteps userSteps = new UserSteps();
-        final Faker faker = new Faker();
-
-        RestAssured.config = RestAssured.config()
-                .logConfig(LogConfig.logConfig().enableLoggingOfRequestAndResponseIfValidationFails());
-
-        String email = faker.internet().emailAddress();
-        String password = faker.internet().password();
-        String name = faker.name().fullName();
-
-        // Создание пользователя
-        userSteps
-                .createUser(email, password, name)
-                .statusCode(HttpStatus.SC_OK)
-                .body("success", is(true));
-
-        // Получение информации о пользователе без токена
-        userSteps.getUserInfo("")
-                .statusCode(HttpStatus.SC_UNAUTHORIZED)
-                .body("success", is(false))
-                .body("message", is("You should be authorised"));
 
         // Обновление информации о пользователе без токена
         String updatedPassword = faker.internet().password();
-        userSteps.updateUserInfoPassword("", updatedPassword)
+        userSteps.updateUserInfoPassword("", null, updatedPassword, null)
                 .statusCode(HttpStatus.SC_UNAUTHORIZED)
                 .body("success", is(false))
                 .body("message", is("You should be authorised"));
@@ -232,32 +163,11 @@ public class ChangingUserDataTests {
     @DisplayName("Test not possibly update name user without login")
     @Description("Этот тест проверяет, что обновление name пользователя невозможно без авторизации")
     public void testNotPossiblyUpdateNameUserWithoutLogin() {
-
         final UserSteps userSteps = new UserSteps();
-        final Faker faker = new Faker();
-
-        RestAssured.config = RestAssured.config()
-                .logConfig(LogConfig.logConfig().enableLoggingOfRequestAndResponseIfValidationFails());
-
-        String email = faker.internet().emailAddress();
-        String password = faker.internet().password();
-        String name = faker.name().fullName();
-
-        // Создание пользователя
-        userSteps
-                .createUser(email, password, name)
-                .statusCode(HttpStatus.SC_OK)
-                .body("success", is(true));
-
-        // Получение информации о пользователе без токена
-        userSteps.getUserInfo("")
-                .statusCode(HttpStatus.SC_UNAUTHORIZED)
-                .body("success", is(false))
-                .body("message", is("You should be authorised"));
 
         // Обновление информации о пользователе без токена
         String updatedName = faker.name().fullName();
-        userSteps.updateUserInfoName("", updatedName)
+        userSteps.updateUserInfoName("", null, null, updatedName)
                 .statusCode(HttpStatus.SC_UNAUTHORIZED)
                 .body("success", is(false))
                 .body("message", is("You should be authorised"));
@@ -269,43 +179,29 @@ public class ChangingUserDataTests {
     public void testNotPossiblyUserUpdateTheSameEmailWithLogin() {
 
         final UserSteps userSteps = new UserSteps();
-        final Faker faker = new Faker();
 
         RestAssured.config = RestAssured.config()
                 .logConfig(LogConfig.logConfig().enableLoggingOfRequestAndResponseIfValidationFails());
-
-        String email = faker.internet().emailAddress();
-        String password = faker.internet().password();
-        String name = faker.name().fullName();
-
-        // Создание пользователя
-        userSteps.createUser(email, password, name)
-                .statusCode(HttpStatus.SC_OK)
-                .body("success", is(true));
 
         // Логинимся и получаем токен
         String accessToken = userSteps.loginUser(email, password, name)
                 .statusCode(HttpStatus.SC_OK)
                 .extract().path("accessToken");
 
-        // Получение информации о пользователе
-        userSteps.getUserInfo(accessToken)
-                .statusCode(HttpStatus.SC_OK)
-                .body("success", is(true))
-                .body("user.email", is(email))
-                .body("user.name", is(name));
-
         // Попытка обновления информации о пользователе на тот же email
-        userSteps.updateUserInfoEmail(accessToken, email)
+        userSteps.updateUserInfoEmail(accessToken, email, name, password)
                 .statusCode(HttpStatus.SC_FORBIDDEN)
                 .body("success", is(false))
                 .body("message", is("User with such email already exists"));
+    }
 
-        // Проверка (дублирование) получения информации о пользователе
-        userSteps.getUserInfo(accessToken)
-                .statusCode(HttpStatus.SC_OK)
-                .body("success", is(true))
-                .body("user.email", is(email))
-                .body("user.name", is(name));
+    @After
+    public void tearDown() {
+        // Удаляем пользователя после теста
+        if (userId != null) {
+            userSteps.deleteUser(userId)
+                    .statusCode(HttpStatus.SC_OK)
+                    .body("success", Is.is(true));
+        }
     }
 }

@@ -1,10 +1,11 @@
-package APITests;
+package api.tests;
 
-import APITests.dto.UserModel;
+import api.tests.dto.UserModel;
 import io.qameta.allure.Step;
 import io.restassured.response.ValidatableResponse;
+import io.restassured.specification.RequestSpecification;
 
-import static APITests.ApiEndpoints.*;
+import static api.tests.ApiEndpoints.*;
 
 public class UserSteps {
 
@@ -48,7 +49,7 @@ public class UserSteps {
                 .then();
     }
 
-    @Step("Create user whiteout name")
+    @Step("Create user without name")
     public ValidatableResponse createUserWitheOutName(String email, String password) {
         UserModel user = new UserModel(email, password, null);
         return RestClient.getRequestSpecification()
@@ -68,32 +69,44 @@ public class UserSteps {
     }
 
     @Step("Update user info email")
-    public ValidatableResponse updateUserInfoEmail(String token, String updatedEmail) {
-        return RestClient.getRequestSpecification()
-                .header("Authorization", token)
-                .body("{\"email\": \"" + updatedEmail + "\"}")
-                .when()
-                .patch("https://stellarburgers.nomoreparties.site/api/auth/user")
+    public ValidatableResponse updateUserInfoEmail(String token, String updatedEmail, String existingPassword, String existingName) {
+        UserModel user = new UserModel(updatedEmail, existingPassword, existingName);
+
+        RequestSpecification request = RestClient.getRequestSpecification().body(user);
+        if (!token.isEmpty()) {
+            request.header("Authorization", token);
+        }
+
+        return request.when()
+                .patch(UPDATE_USER_INFO)
                 .then();
     }
 
     @Step("Update user info password")
-    public ValidatableResponse updateUserInfoPassword(String token, String updatedPassword) {
-        return RestClient.getRequestSpecification()
-                .header("Authorization", token)
-                .body("{\"password\": \"" + updatedPassword + "\"}")
-                .when()
-                .patch("https://stellarburgers.nomoreparties.site/api/auth/user")
+    public ValidatableResponse updateUserInfoPassword(String token, String existingEmail, String updatedPassword, String existingName) {
+        UserModel user = new UserModel(existingEmail, updatedPassword, existingName);
+
+        RequestSpecification request = RestClient.getRequestSpecification().body(user);
+        if (!token.isEmpty()) {
+            request.header("Authorization", token);
+        }
+
+        return request.when()
+                .patch(UPDATE_USER_INFO)
                 .then();
     }
 
     @Step("Update user info name")
-    public ValidatableResponse updateUserInfoName(String token, String updatedName) {
-        return RestClient.getRequestSpecification()
-                .header("Authorization", token)
-                .body("{\"name\": \"" + updatedName + "\"}")
-                .when()
-                .patch("https://stellarburgers.nomoreparties.site/api/auth/user")
+    public ValidatableResponse updateUserInfoName(String token, String existingEmail, String existingPassword, String updatedName) {
+        UserModel user = new UserModel(existingEmail, existingPassword, updatedName);
+
+        RequestSpecification request = RestClient.getRequestSpecification().body(user);
+        if (!token.isEmpty()) {
+            request.header("Authorization", token);
+        }
+
+        return request.when()
+                .patch(UPDATE_USER_INFO)
                 .then();
     }
 

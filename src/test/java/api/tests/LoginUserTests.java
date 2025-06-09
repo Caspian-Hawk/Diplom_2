@@ -1,4 +1,5 @@
-import APITests.UserSteps;
+package api.tests;
+
 import com.github.javafaker.Faker;
 import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
@@ -6,15 +7,37 @@ import io.restassured.RestAssured;
 import io.restassured.config.LogConfig;
 import org.apache.http.HttpStatus;
 import org.hamcrest.Matchers;
+import org.hamcrest.core.Is;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import static org.hamcrest.core.Is.is;
 
 public class LoginUserTests {
+
     private final UserSteps userSteps = new UserSteps();
     private final Faker faker = new Faker();
+
+    // Поля для хранения данных пользователя
     private String email;
     private String password;
     private String name;
+    private Integer userId;
+
+    @Before
+    public void setUp() {
+        RestAssured.config = RestAssured.config()
+                .logConfig(LogConfig.logConfig().enableLoggingOfRequestAndResponseIfValidationFails());
+
+        email = faker.internet().emailAddress();
+        password = faker.internet().password();
+        name = faker.name().fullName();
+
+        // Создание пользователя
+        userSteps.createUser(email, password, name)
+                .statusCode(HttpStatus.SC_OK)
+                .body("success", Is.is(true));
+    }
 
     @Test
     @DisplayName("Test possibly login user")
@@ -24,14 +47,6 @@ public class LoginUserTests {
         RestAssured.config = RestAssured.config()
                 .logConfig(LogConfig.logConfig().enableLoggingOfRequestAndResponseIfValidationFails());
 
-        email = faker.internet().emailAddress();
-        password = faker.internet().password();
-        name = faker.name().fullName();
-
-        userSteps
-                .createUser(email, password, name)
-                .statusCode(HttpStatus.SC_OK)
-                .body("success", is(true));
         userSteps
                 .loginUser(email, password, name)
                 .statusCode(HttpStatus.SC_OK)
@@ -45,15 +60,6 @@ public class LoginUserTests {
 
         RestAssured.config = RestAssured.config()
                 .logConfig(LogConfig.logConfig().enableLoggingOfRequestAndResponseIfValidationFails());
-
-        email = faker.internet().emailAddress();
-        password = faker.internet().password();
-        name = faker.name().fullName();
-
-        userSteps
-                .createUser(email, password, name)
-                .statusCode(HttpStatus.SC_OK)
-                .body("success", is(true));
 
         email = faker.internet().emailAddress();
 
@@ -70,15 +76,6 @@ public class LoginUserTests {
 
         RestAssured.config = RestAssured.config()
                 .logConfig(LogConfig.logConfig().enableLoggingOfRequestAndResponseIfValidationFails());
-
-        email = faker.internet().emailAddress();
-        password = faker.internet().password();
-        name = faker.name().fullName();
-
-        userSteps
-                .createUser(email, password, name)
-                .statusCode(HttpStatus.SC_OK)
-                .body("success", is(true));
 
         password = faker.internet().password();
 
@@ -98,15 +95,6 @@ public class LoginUserTests {
 
         email = faker.internet().emailAddress();
         password = faker.internet().password();
-        name = faker.name().fullName();
-
-        userSteps
-                .createUser(email, password, name)
-                .statusCode(HttpStatus.SC_OK)
-                .body("success", is(true));
-
-        email = faker.internet().emailAddress();
-        password = faker.internet().password();
 
         userSteps
                 .loginUser(email, password, name)
@@ -114,8 +102,13 @@ public class LoginUserTests {
                 .body("message", Matchers.is("email or password are incorrect"));
     }
 
+    @After
     public void tearDown() {
-        Integer id = userSteps.loginUser(email, password, name).extract().path("id");
-        userSteps.deleteUser(id);
+        // Удаляем пользователя после теста
+        if (userId != null) {
+            userSteps.deleteUser(userId)
+                    .statusCode(HttpStatus.SC_OK)
+                    .body("success", Is.is(true));
+        }
     }
 }

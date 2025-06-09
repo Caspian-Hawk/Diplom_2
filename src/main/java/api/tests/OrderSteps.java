@@ -1,9 +1,9 @@
-package APITests;
+package api.tests;
 
-import APITests.dto.OrderModel;
+import api.tests.dto.OrderModel;
 import io.qameta.allure.Step;
 import io.restassured.response.ValidatableResponse;
-import static APITests.ApiEndpoints.CREATE_ORDER;
+import static api.tests.ApiEndpoints.CREATE_ORDER;
 
 public class OrderSteps {
 

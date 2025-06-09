@@ -1,4 +1,5 @@
-import APITests.UserSteps;
+package api.tests;
+
 import com.github.javafaker.Faker;
 import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
@@ -6,6 +7,8 @@ import io.restassured.RestAssured;
 import io.restassured.config.LogConfig;
 import org.apache.http.HttpStatus;
 import org.hamcrest.Matchers;
+import org.hamcrest.core.Is;
+import org.junit.After;
 import org.junit.Test;
 import static org.hamcrest.core.Is.is;
 
@@ -16,6 +19,7 @@ public class CreateUserTests {
     private String email;
     private String password;
     private String name;
+    private Integer userId;
 
     @Test
     @DisplayName("Test possibly create user")
@@ -109,8 +113,12 @@ public class CreateUserTests {
                 .body("message", Matchers.is("Email, password and name are required fields"));
     }
 
+    @After
     public void tearDown() {
-        Integer id = userSteps.loginUser(email, password, name).extract().path("id");
-        userSteps.deleteUser(id);
+        if (userId != null) {
+            userSteps.deleteUser(userId)
+                    .statusCode(HttpStatus.SC_OK)
+                    .body("success", Is.is(true));
+        }
     }
 }
