@@ -10,4 +10,5 @@ public class ApiEndpoints {
     public static final String GET_USER_INFO = SITE + "/api/auth/user";
     public static final String UPDATE_USER_INFO = SITE + "/api/auth/user";
     public static final String GET_ORDER_INFO = SITE + "/api/orders";
+
 }

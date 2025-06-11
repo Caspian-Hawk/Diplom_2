@@ -12,6 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 import static org.hamcrest.Matchers.is;
 
+
 public class ChangingUserDataTests {
 
     private final UserSteps userSteps = new UserSteps();

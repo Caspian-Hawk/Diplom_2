@@ -11,7 +11,6 @@ import org.hamcrest.core.Is;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
 import static org.hamcrest.core.Is.is;
 
 public class CreateOrderTests {

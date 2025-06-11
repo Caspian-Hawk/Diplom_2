@@ -12,6 +12,7 @@ import org.junit.After;
 import org.junit.Test;
 import static org.hamcrest.core.Is.is;
 
+
 public class CreateUserTests {
 
     private final UserSteps userSteps = new UserSteps();

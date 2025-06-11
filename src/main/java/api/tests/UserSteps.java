@@ -4,7 +4,6 @@ import api.tests.dto.UserModel;
 import io.qameta.allure.Step;
 import io.restassured.response.ValidatableResponse;
 import io.restassured.specification.RequestSpecification;
-
 import static api.tests.ApiEndpoints.*;
 
 public class UserSteps {
